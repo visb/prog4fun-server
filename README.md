@@ -1,2 +1,2 @@
-prog4fun-server
+prog4fun server
 ===============
