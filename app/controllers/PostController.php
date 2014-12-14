@@ -3,53 +3,92 @@
 class PostController extends BaseController {
 
   /**
-   * @method get
-   * @return Array list of posts
+   * @http_verb get
+   * @return Illuminate\Pagination\Paginator
    */
-  public function list()
+  public function index()
   {
-    // code...
+    $count = Input::get('count', 10);
+
+    $posts = Post::paginate($count);
+
+    return Response::json($posts->toArray());
   }
 
   /**
-   * @method get
+   * @http_verb get
    * @return Object single post
    */
-  public function get()
+  public function show($id = 0)
   {
-    // if (route.id)
-    //   post = postModel.get(route.id)
-    // else
-    //   post = postModel.limit(1).order(rand).get()
-    //
-    // return post
+    if ($id) {
+      $post = Post::findOrFail($id);
+    } else {
+      $post = Post::orderByRaw('rand()')->first();
+    }
+
+    return Response::json($post->toArray());
   }
 
   /**
-   * @method post
+   * @http_verb post
    * @return Object single post
    */
-  public function create()
+  public function store()
   {
-    // return postModel.create(post_data)
+    if (!Post::validate(Input::all())) {
+      return Response::json(Post::messages());
+    }
+
+    $post = Post::create(Input::all())->toArray();
+
+    return Response::json($post);
   }
 
   /**
-   * @method post
+   * @http_verb post
    * @return Object new like number
    */
-  public function like()
+  public function like($id)
   {
-    // return [likes => $new_like_num]
+    // @todo: associate to logged user id to dont repeat
+    $post = Post::findOrFail($id);
+    $post->count_likes += 1;
+    $post->save();
+    return Response::json(['count_likes' => $post->count_likes]);
   }
 
   /**
-   * @method post
+   * @http_verb post
    * @return Object new unlike number
    */
-	public function unlike()
-	{
-    // return [unlikes => $new_unlike_num]
-	}
+  public function unlike($id)
+  {
+    // @todo: associate to logged user id to dont repeat
+    $post = Post::findOrFail($id);
+    $post->count_unlikes += 1;
+    $post->save();
+    return Response::json(['count_unlikes' => $post->count_unlikes]);
+  }
+
+  /**
+   * @http_verb get
+   * @return Object next post or 404
+   */
+  public function next($id)
+  {
+    $post = Post::next($id)->firstOrFail();
+    return Response::json($post->toArray());
+  }
+
+  /**
+   * @http_verb get
+   * @return Object prev post or 404
+   */
+  public function prev($id)
+  {
+    $post = Post::prev($id)->firstOrFail();
+    return Response::json($post->toArray());
+  }
 
 }
